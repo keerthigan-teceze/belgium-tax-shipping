@@ -63,7 +63,7 @@ export async function calculateShippingForSku(
 
     // 1️⃣ Try mapped product first for price
     const product = await prisma.productMapping_be.findFirst({
-      where: { shop, sku },
+      where: { sku },
       select: {
         sku: true,
         price: true,

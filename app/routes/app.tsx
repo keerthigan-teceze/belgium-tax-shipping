@@ -1,15 +1,111 @@
-import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useRouteError } from "react-router";
+import type {
+  HeadersFunction,
+  LoaderFunctionArgs,
+  ActionFunctionArgs,
+} from "react-router";
+import AppNav from "../components/AppNav";
+import {
+  Outlet,
+  useLoaderData,
+  useRouteError,
+  redirect,
+} from "react-router";
+
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  try {
+    const authResult = await authenticate.admin(request);
+
+    if (authResult instanceof Response) {
+      return authResult;
+    }
+
+    const { session } = authResult ?? {};
+
+    if (!session || !session.shop) {
+      console.error("No session or shop found");
+      return redirect("/?error=no-session");
+    }
+
+    const formData = await request.formData();
+
+    const taxRateInput = formData.get("taxRate");
+    const carrierChargeInput = formData.get("carrierCharge");
+    const usdToEuroRateInput = formData.get("usdToEuroRate");
+
+    if (
+      !taxRateInput ||
+      !carrierChargeInput ||
+      !usdToEuroRateInput
+    ) {
+      return redirect("/app?error=missing-fields");
+    }
+
+    const taxRate = parseFloat(taxRateInput as string);
+    const carrierCharge = parseFloat(carrierChargeInput as string);
+    const usdToEuroRate = parseFloat(usdToEuroRateInput as string);
+
+    if (
+      isNaN(taxRate) ||
+      isNaN(carrierCharge) ||
+      isNaN(usdToEuroRate)
+    ) {
+      return redirect("/app?error=invalid-values");
+    }
+
+    await prisma.settings_be.upsert({
+      where: {
+        shop: session.shop,
+      },
+      update: {
+        taxPercentage: taxRate,
+        carrierCharge,
+        usdToEuroRate,
+        updatedAt: new Date(),
+      },
+      create: {
+        id: `settings-${session.shop}`,
+        shop: session.shop,
+        taxPercentage: taxRate,
+        carrierCharge,
+        usdToEuroRate,
+        updatedAt: new Date(),
+      },
+    });
+
+    return redirect("/app?updated=true");
+  } catch (error) {
+    console.error("App action error:", error);
+
+    if (error instanceof Response) {
+      throw error;
+    }
+
+    return redirect("/app?error=server-error");
+  }
+};
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  const authResult = await authenticate.admin(request);
 
-  // eslint-disable-next-line no-undef
-  return { apiKey: process.env.SHOPIFY_API_KEY || "" };
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
+  const { session } = authResult ?? {};
+
+  if (!session || !session.shop) {
+    return redirect("/?error=no-session");
+  }
+
+  return {
+    apiKey: process.env.SHOPIFY_API_KEY || "",
+  };
 };
 
 export default function App() {
@@ -17,16 +113,12 @@ export default function App() {
 
   return (
     <AppProvider embedded apiKey={apiKey}>
-      <s-app-nav>
-        <s-link href="/app">Home</s-link>
-        <s-link href="/app/additional">Additional page</s-link>
-      </s-app-nav>
+      <AppNav />
       <Outlet />
     </AppProvider>
   );
 }
 
-// Shopify needs React Router to catch some thrown responses, so that their headers are included in the response.
 export function ErrorBoundary() {
   return boundary.error(useRouteError());
 }

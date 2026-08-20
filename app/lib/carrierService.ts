@@ -102,7 +102,7 @@ export async function registerCarrierServiceForShop(
     };
   };
 
-  await prisma.carrierService.upsert({
+  await prisma.CarrierService_be.upsert({
     where: { shop },
     update: {
       serviceId: json.carrier_service.id,

@@ -50,7 +50,7 @@ export async function calculateShippingForSku(
   shop: string
 ): Promise<ShippingCalculationResult> {
   try {
-    const settings = await prisma.settings_UK.findUnique({
+    const settings = await prisma.settings_be.findUnique({
       where: { shop },
     });
 
@@ -62,7 +62,7 @@ export async function calculateShippingForSku(
     }
 
     // 1️⃣ Try mapped product first for price
-    const product = await prisma.productMapping_UK.findFirst({
+    const product = await prisma.productMapping_be.findFirst({
       where: { shop, sku },
       select: {
         sku: true,
@@ -75,7 +75,7 @@ export async function calculateShippingForSku(
       const taxAmount = basePrice * (settings.taxPercentage / 100);
 
       // Check tax-only status from source product
-      const sourceProduct = await prisma.shopify_products_final_UK.findUnique({
+      const sourceProduct = await prisma.shopify_products_final_be.findUnique({
         where: { sku },
         select: { product_type: true },
       });
@@ -97,7 +97,7 @@ export async function calculateShippingForSku(
     }
 
     // 2️⃣ Fallback to Shopify product
-    const sourceProduct = await prisma.shopify_products_final_UK.findUnique({
+    const sourceProduct = await prisma.shopify_products_final_be.findUnique({
       where: { sku },
       select: {
         sku: true,

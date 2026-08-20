@@ -24,7 +24,7 @@ export async function syncProductsForShop(
   try {
     // ✅ RESUME EXISTING JOB
     if (resumeJobId) {
-      const existingJob = await prisma.productSyncJob_UK.findUnique({
+      const existingJob = await prisma.productSyncJob_be.findUnique({
         where: { id: resumeJobId },
       });
 
@@ -45,7 +45,7 @@ export async function syncProductsForShop(
       total = existingJob.total;
 
       if (!total || total === 0) {
-        total = await prisma.shopify_products_final_UK.count({
+        total = await prisma.shopify_products_final_be.count({
           where: {
             sku: { not: null },
             price: { not: null },
@@ -53,7 +53,7 @@ export async function syncProductsForShop(
           },
         });
 
-        await prisma.productSyncJob_UK.update({
+        await prisma.productSyncJob_be.update({
           where: { id: resumeJobId },
           data: {
             total,  // ✅ FIX: set total if missing
@@ -63,7 +63,7 @@ export async function syncProductsForShop(
       processed = existingJob.processed;
       cursorSku = existingJob.cursorSku ?? null;
 
-      await prisma.productSyncJob_UK.update({
+      await prisma.productSyncJob_be.update({
         where: { id: resumeJobId },
         data: {
           status: "running",
@@ -76,7 +76,7 @@ export async function syncProductsForShop(
 
     // ✅ CREATE NEW JOB
     else {
-      total = await prisma.shopify_products_final_UK.count({
+      total = await prisma.shopify_products_final_be.count({
         where: {
           sku: { not: null },
           price: { not: null },
@@ -90,7 +90,7 @@ export async function syncProductsForShop(
 
       jobId = randomUUID();
 
-      await prisma.productSyncJob_UK.create({
+      await prisma.productSyncJob_be.create({
         data: {
           id: jobId,
           shop,
@@ -103,7 +103,7 @@ export async function syncProductsForShop(
     }
 
     // ✅ FETCH ONLY ONE BATCH (KEY CHANGE FOR VERCEL)
-    const products = await prisma.shopify_products_final_UK.findMany({
+    const products = await prisma.shopify_products_final_be.findMany({
       where: {
         sku: { not: null },
         price: { not: null },
@@ -121,7 +121,7 @@ export async function syncProductsForShop(
 
     // ✅ NO MORE DATA → COMPLETE JOB
     if (products.length === 0) {
-      const job = await prisma.productSyncJob_UK.findUnique({
+      const job = await prisma.productSyncJob_be.findUnique({
         where: { id: jobId },
         select: { status: true },
       });
@@ -136,7 +136,7 @@ export async function syncProductsForShop(
         };
       }
 
-      await prisma.productSyncJob_UK.update({
+      await prisma.productSyncJob_be.update({
         where: { id: jobId },
         data: {
           status: "completed",
@@ -161,7 +161,7 @@ export async function syncProductsForShop(
           continue;
         }
 
-        await prisma.productMapping_UK.upsert({
+        await prisma.productMapping_be.upsert({
           where: {
             shop_sku: {
               shop,
@@ -189,7 +189,7 @@ export async function syncProductsForShop(
     }
 
     // ✅ SAVE PROGRESS (CRUCIAL FOR CRON RESUME)
-    await prisma.productSyncJob_UK.update({
+    await prisma.productSyncJob_be.update({
       where: { id: jobId },
       data: {
         processed,
@@ -211,7 +211,7 @@ export async function syncProductsForShop(
 
     if (jobId) {
       try {
-        await prisma.productSyncJob_UK.update({
+        await prisma.productSyncJob_be.update({
           where: { id: jobId },
           data: {
             status: "failed",
@@ -236,7 +236,7 @@ export async function syncProductsForShop(
 
 // ✅ CANCEL (unchanged)
 export async function cancelSyncJob(jobId: string) {
-  const job = await prisma.productSyncJob_UK.findUnique({
+  const job = await prisma.productSyncJob_be.findUnique({
     where: { id: jobId },
   });
 
@@ -248,7 +248,7 @@ export async function cancelSyncJob(jobId: string) {
     return job;
   }
 
-  return prisma.productSyncJob_UK.update({
+  return prisma.productSyncJob_be.update({
     where: { id: jobId },
     data: {
       status: "cancelled",
@@ -259,7 +259,7 @@ export async function cancelSyncJob(jobId: string) {
 
 // ✅ RESUME (works perfectly with batch model)
 export async function resumeSyncJob(jobId: string): Promise<SyncResult> {
-  const job = await prisma.productSyncJob_UK.findUnique({
+  const job = await prisma.productSyncJob_be.findUnique({
     where: { id: jobId },
   });
 
@@ -276,7 +276,7 @@ export async function resumeSyncJob(jobId: string): Promise<SyncResult> {
 
 // ✅ STATUS (unchanged)
 export async function getSyncJobStatus(jobId: string) {
-  return prisma.productSyncJob_UK.findUnique({
+  return prisma.productSyncJob_be.findUnique({
     where: { id: jobId },
   });
 }

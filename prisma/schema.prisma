@@ -1,34 +1,161 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
-// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
-// enough when changing adapters.
-// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
-  provider = "sqlite"
-  url      = "file:dev.sqlite"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ProductMapping_be {
+  id                              BigInt                 @id @default(autoincrement())
+  title                           String?
+  body_html                       String?
+  handle                          String?
+  vendor                          String?
+  product_type                    String?
+  tags                            String?
+  images                          Json?
+  sku                             String                 @unique
+  inventory_management            String?
+  inventory_quantity              Int?
+  price                           Decimal?               @db.Decimal
+  compare_at_price                Decimal?               @db.Decimal
+  barcode                         String?
+  specs_table                     String?
+  information                     String?
+  created_at                      DateTime?              @default(now()) @db.Timestamptz(6)
+  part_number                     String?
+  source_type                     String?
+  seo_updated_product_title       String?
+  seo_updated_product_description String?
+  embedding                       Unsupported("vector")?
+  is_external_embedding_finished  Boolean?
+  weight                          Decimal?               @db.Decimal
+  seo_updated_meta_title          String?
+  seo_updated_meta_description    String?
+  seo_updated_url_handle          String?
+  New_Arrive                      String?
+  SEO_Update                      String?
+
+  @@index([embedding], map: "productmapping_be_embedding_idx")
+}
+
+model ProductSyncJob_be {
+  id         String    @id(map: "ProductSyncJob_de_pkey")
+  shop       String
+  status     String
+  processed  Int       @default(0)
+  total      Int       @default(0)
+  error      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  cursorSku  String?
+
+  @@index([createdAt], map: "ProductSyncJob_de_createdAt_idx")
+  @@index([shop], map: "ProductSyncJob_de_shop_idx")
+  @@index([status], map: "ProductSyncJob_de_status_idx")
+}
+
+model RequestLog_be {
+  id           String   @id(map: "requestlog_pkey")
+  shop         String
+  type         String
+  endpoint     String
+  method       String
+  requestBody  String?
+  responseBody String?
+  status       Int?
+  error        String?
+  durationMs   Int?
+  createdAt    DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([createdAt], map: "RequestLog_createdAt_idx")
+  @@index([shop], map: "RequestLog_shop_idx")
 }
 
 model Session {
-  id            String    @id
-  shop          String
-  state         String
-  isOnline      Boolean   @default(false)
-  scope         String?
-  expires       DateTime?
-  accessToken   String
-  userId        BigInt?
-  firstName     String?
-  lastName      String?
-  email         String?
-  accountOwner  Boolean   @default(false)
-  locale        String?
-  collaborator  Boolean?  @default(false)
-  emailVerified Boolean?  @default(false)
+  id                  String    @id(map: "Session_de_pkey")
+  shop                String    @unique(map: "Session_de_shop_key")
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime? @db.Timestamp(6)
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
   refreshToken        String?
-  refreshTokenExpires DateTime?
+  refreshTokenExpires DateTime? @db.Timestamp(6)
+
+  @@map("Session_be")
+}
+model Settings_be {
+  id            String   @id(map: "settings_pkey")
+  shop          String   @unique(map: "Settings_de_shop_key")
+  taxPercentage Float
+  carrierCharge Float
+  updatedAt     DateTime @db.Timestamp(6)
+  usdToEuroRate Float
+
+  @@index([shop], map: "Settings_shop_idx")
+}
+
+model ShippingCalculationLog_be {
+  id            String   @id(map: "ShippingCalculationLog_de_pkey")
+  shop          String
+  sku           String
+  basePrice     Float
+  taxAmount     Float
+  carrierCharge Float
+  total         Float
+  status        String
+  error         String?
+  createdAt     DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([createdAt], map: "ShippingCalculationLog_createdAt_idx")
+  @@index([shop], map: "ShippingCalculationLog_shop_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model shopify_products_final_be {
+  id                              BigInt                 @id @default(autoincrement())
+  title                           String?
+  body_html                       String?
+  handle                          String?
+  vendor                          String?
+  product_type                    String?
+  tags                            String?
+  images                          Json?
+  sku                             String                 @unique
+  inventory_management            String?
+  inventory_quantity              Int?
+  price                           Decimal?               @db.Decimal
+  compare_at_price                Decimal?               @db.Decimal
+  barcode                         String?
+  specs_table                     String?
+  information                     String?
+  created_at                      DateTime?              @default(now()) @db.Timestamptz(6)
+  part_number                     String?
+  source_type                     String?
+  seo_updated_product_title       String?
+  seo_updated_product_description String?
+  embedding                       Unsupported("vector")?
+  is_external_embedding_finished  Boolean?
+  weight                          Decimal?               @db.Decimal
+  seo_updated_meta_title          String?
+  seo_updated_meta_description    String?
+  seo_updated_url_handle          String?
+  New_Arrive                      String?
+  SEO_Update                      String?
+
+  @@index([embedding])
 }

@@ -97,14 +97,14 @@ export default function RateSettingsPanel({ settings }: Props) {
           </label>
 
           <label style={fieldStyles}>
-            USD to GBP rate
+            USD to Euro rate
             <input
               type="number"
-              name="usdToGbpRate"
+              name="usdToEuroRate"
               inputMode="decimal"
               min="0"
               step="0.01"
-              defaultValue={settings.usdToGbpRate}
+              defaultValue={settings.usdToEuroRate}
               style={inputStyles}
               required
             />
@@ -135,7 +135,7 @@ export default function RateSettingsPanel({ settings }: Props) {
         <strong>Current values:</strong>
         <div>Tax rate: {settings.taxRate}%</div>
         <div>Carrier charge: £{settings.carrierCharge}</div>
-        <div>USD to GBP rate: {settings.usdToGbpRate}</div>
+        <div>USD to Euro rate: {settings.usdToEuroRate}</div>
       </div>
     </section>
   );

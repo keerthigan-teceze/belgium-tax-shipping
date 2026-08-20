@@ -45,13 +45,7 @@ export async function syncProductsForShop(
       total = existingJob.total;
 
       if (!total || total === 0) {
-        total = await prisma.shopify_products_final_be.count({
-          where: {
-            sku: { not: null },
-            price: { not: null },
-            part_number: { not: null },
-          },
-        });
+        total = await prisma.shopify_products_final_be.count();
 
         await prisma.productSyncJob_be.update({
           where: { id: resumeJobId },
@@ -78,7 +72,7 @@ export async function syncProductsForShop(
     else {
       total = await prisma.shopify_products_final_be.count({
         where: {
-          sku: { not: null },
+         
           price: { not: null },
           part_number: { not: null },
         },
@@ -105,7 +99,7 @@ export async function syncProductsForShop(
     // ✅ FETCH ONLY ONE BATCH (KEY CHANGE FOR VERCEL)
     const products = await prisma.shopify_products_final_be.findMany({
       where: {
-        sku: { not: null },
+       
         price: { not: null },
         part_number: { not: null },
         ...(cursorSku && { sku: { gt: cursorSku } }),
@@ -161,24 +155,20 @@ export async function syncProductsForShop(
           continue;
         }
 
-        await prisma.productMapping_be.upsert({
-          where: {
-            shop_sku: {
-              shop,
-              sku: product.sku,
-            },
-          },
-          update: {
-            price: product.price,
-            ingramPartNumber: product.part_number,
-          },
-          create: {
-            shop,
-            sku: product.sku,
-            price: product.price,
-            ingramPartNumber: product.part_number,
-          },
-        });
+     await prisma.productMapping_be.upsert({
+  where: {
+    sku: product.sku,
+  },
+  update: {
+    price: product.price,
+    part_number: product.part_number,
+  },
+  create: {
+    sku: product.sku,
+    price: product.price,
+    part_number: product.part_number,
+  },
+});
 
         processed++;
         cursorSku = product.sku;

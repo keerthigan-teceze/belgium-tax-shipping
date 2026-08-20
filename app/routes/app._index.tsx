@@ -66,9 +66,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         },
       });
 
-      await prisma.productMapping_be.deleteMany({
-        where: { sku: { not: null } },
-      });
+      await prisma.productMapping_be.deleteMany();
 
       const result = await syncProductsForShop(session.shop);
       if (result.success) {
@@ -161,7 +159,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       sku: true,
       price: true,
       part_number: true,
-      created_at: true,
     },
     take: 50,
   });
@@ -253,7 +250,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const rateSettings: RateSettings = {
     taxRate: settings.taxPercentage,
     carrierCharge: settings.carrierCharge,
-    usdToGbpRate: settings.usdToEuroRate,
+    usdToEuroRate: settings.usdToEuroRate,
   };
 
   return { mainData, mappingRows, logs, requestLogs, carrierService, rateSettings, productCount, mappingCount, latestSyncJob };

@@ -10,37 +10,10 @@ datasource db {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model ProductMapping_be {
-  id                              BigInt                 @id @default(autoincrement())
-  title                           String?
-  body_html                       String?
-  handle                          String?
-  vendor                          String?
-  product_type                    String?
-  tags                            String?
-  images                          Json?
-  sku                             String                 @unique
-  inventory_management            String?
-  inventory_quantity              Int?
-  price                           Decimal?               @db.Decimal
-  compare_at_price                Decimal?               @db.Decimal
-  barcode                         String?
-  specs_table                     String?
-  information                     String?
-  created_at                      DateTime?              @default(now()) @db.Timestamptz(6)
-  part_number                     String?
-  source_type                     String?
-  seo_updated_product_title       String?
-  seo_updated_product_description String?
-  embedding                       Unsupported("vector")?
-  is_external_embedding_finished  Boolean?
-  weight                          Decimal?               @db.Decimal
-  seo_updated_meta_title          String?
-  seo_updated_meta_description    String?
-  seo_updated_url_handle          String?
-  New_Arrive                      String?
-  SEO_Update                      String?
-
-  @@index([embedding], map: "productmapping_be_embedding_idx")
+  id          BigInt   @id @default(autoincrement())
+  sku         String   @unique
+  price       Decimal? @db.Decimal
+  part_number String?
 }
 
 model ProductSyncJob_be {
@@ -98,6 +71,7 @@ model Session {
 
   @@map("Session_be")
 }
+
 model Settings_be {
   id            String   @id(map: "settings_pkey")
   shop          String   @unique(map: "Settings_de_shop_key")

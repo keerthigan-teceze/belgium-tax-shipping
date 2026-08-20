@@ -41,7 +41,7 @@ export interface CarrierServiceInfo {
 export interface RateSettings {
   taxRate: number;
   carrierCharge: number;
-  usdToGbpRate: number;
+  usdToEuroRate: number;
 }
 
 export interface ShippingCalculationResult {

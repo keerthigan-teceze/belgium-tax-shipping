@@ -52,6 +52,11 @@ export async function findExistingCarrierService(
   const callbackUrl = getAppCallbackUrl();
   const match = services.find((s) => s.callback_url === callbackUrl);
 
+  console.log("Carrier Services:",
+JSON.stringify(services, null, 2)
+
+);
+
   if (!match) return null;
 
   return {
@@ -67,8 +72,8 @@ export async function registerCarrierServiceForShop(
   accessToken: string
 ) {
   const callbackUrl = getAppCallbackUrl();
-  const serviceName = "UK Shipping Calculator";
-
+  const serviceName = "Belgium Shipping Calculator";
+console.log("SERVICE NAME =", serviceName);
   const response = await fetch(
     `https://${shop}/admin/api/${apiVersion}/carrier_services.json`,
     {
@@ -102,7 +107,7 @@ export async function registerCarrierServiceForShop(
     };
   };
 
-  await prisma.CarrierService_be.upsert({
+  await prisma.carrierService_be.upsert({
     where: { shop },
     update: {
       serviceId: json.carrier_service.id,
@@ -143,13 +148,13 @@ export async function deleteCarrierServiceForShop(
     throw new Error(`Failed to delete carrier service: ${response.status}`);
   }
 
-  await prisma.carrierService.delete({
+  await prisma.carrierService_be.delete({
     where: { shop },
   });
 }
 
 export async function getCarrierServiceFromDb(shop: string) {
-  return prisma.carrierService.findUnique({
+  return prisma.carrierService_be.findUnique({
     where: { shop },
   });
 }

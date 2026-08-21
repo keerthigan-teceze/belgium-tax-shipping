@@ -133,3 +133,14 @@ model shopify_products_final_be {
 
   @@index([embedding])
 }
+
+
+model CarrierService_be {
+  shop        String   @id
+  serviceId   Int
+  serviceName String
+  callbackUrl String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

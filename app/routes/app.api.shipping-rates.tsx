@@ -86,26 +86,39 @@ function isTaxOnly(productType?: string | null): boolean {
 }
 
 
-// Fetch live USD to GBP exchange rate
-async function getUsdToGbpRate(): Promise<number> {
+// Fetch live USD to EUR exchange rate
+async function getUsdToEurRate(): Promise<number> {
   try {
-    const response = await fetch("https://api.frankfurter.app/latest?from=USD&to=GBP");
+    const response = await fetch(
+      "https://api.frankfurter.app/latest?from=USD&to=EUR"
+    );
+
     if (response.ok) {
       const data = await response.json();
-      return data.rates?.GBP || 0.79;
+      return data.rates?.EUR || 0.86;
     }
   } catch (error) {
-    console.error("Failed to fetch exchange rate:", error);
+    console.error(error);
   }
-  return 0.79; // Fallback rate
-}
 
-async function getProduct(shop: string, sku: string): Promise<{ price: number | null; productType: string | null }> {
+  return 0.86;
+}
+async function getProduct(
+  sku: string | null
+): Promise<{ price: number | null; productType: string | null }> {
+
+  if (!sku) {
+    return {
+      price: null,
+      productType: null,
+    };
+  }
+
   let productType: string | null = null;
   let price: number | null = null;
 
-  const mapping = await prisma.productMapping_UK.findFirst({
-    where: { shop, sku },
+  const mapping = await prisma.productMapping_be.findFirst({
+    where: { sku },
     select: { price: true },
   });
 
@@ -113,22 +126,27 @@ async function getProduct(shop: string, sku: string): Promise<{ price: number | 
     price = Number(mapping.price);
   }
 
-  // Always fetch product_type from shopify_products_final_UK as it's the source of truth
-  const sourceProduct = await prisma.shopify_products_final_UK.findUnique({
+  const sourceProduct = await prisma.shopify_products_final_be.findUnique({
     where: { sku },
-    select: { price: true, product_type: true },
+    select: {
+      price: true,
+      product_type: true,
+    },
   });
 
   if (sourceProduct) {
     productType = sourceProduct.product_type ?? null;
+
     if (price === null && sourceProduct.price) {
       price = Number(sourceProduct.price);
     }
   }
 
-  return { price, productType };
+  return {
+    price,
+    productType,
+  };
 }
-
 async function processRequest(shop: string, requestBody: ShopifyRateRequest): Promise<ShopifyRateResponse> {
   const items = requestBody.rate?.items || [];
   
@@ -136,7 +154,7 @@ async function processRequest(shop: string, requestBody: ShopifyRateRequest): Pr
   console.log(items)
   console.log("Items received:", items.map(i => ({ sku: i.sku, quantity: i.quantity })));
   
-  const settings = await prisma.settings_UK.findUnique({
+  const settings = await prisma.settings_be.findUnique({
     where: { shop },
   });
 
@@ -146,22 +164,22 @@ async function processRequest(shop: string, requestBody: ShopifyRateRequest): Pr
     await logRequest(shop, "incoming", "/app/api/shipping-rates", "POST", "", JSON.stringify({ error: "No settings" }), 500, "No settings for shop", 0);
     return {
       rates: [{
-        service_name: "UK Standard Shipping",
-        service_code: "UK_STD",
+        service_name: "Belgium Standard Shipping",
+        service_code: "BE_STD",
         total_price: "0",
-        currency: "GBP",
+        currency: "EUR",
         description: "Configuration required",
       }],
     };
   }
 
   // Get live exchange rate
-  let exchangeRate = await getUsdToGbpRate();
-  console.log("Exchange rate (USD to GBP):", exchangeRate);
+  let exchangeRate = await getUsdToEurRate();
+  console.log("Exchange rate (USD to EUR):", exchangeRate);
   exchangeRate = exchangeRate * 1.015; // Add 1.5% buffer to account for fluctuations and fees
   console.log("Adjusted exchange rate with buffer:", exchangeRate);
 
-  let totalPriceGbp = 0;
+  let totalPriceEur = 0;
   let hasItems = false;
   let allItemsTaxOnly = true;
 
@@ -169,37 +187,37 @@ async function processRequest(shop: string, requestBody: ShopifyRateRequest): Pr
     if (!item.requires_shipping) continue;
 
     hasItems = true;
-    const { price: dbPrice, productType } = await getProduct(shop, item.sku);
+    const { price: dbPrice, productType } = await getProduct( item.sku);
 
     if (!isTaxOnly(productType)) {
       allItemsTaxOnly = false;
     }
 
-    let priceGbp: number;
+    let priceEur: number;
 
     if (dbPrice !== null) {
-      // DB price is already in GBP
-      priceGbp = dbPrice;
+      // DB price is already in EUR
+      priceEur = dbPrice;
     } else {
-      // Shopify price is in USD pennies - convert to GBP
+      // Shopify price is in USD pennies - convert to EUR
       const priceUsd = Number(item.price) / 100;
-      priceGbp = priceUsd * exchangeRate;
-      console.log(`Price for SKU ${item.sku} not found in DB, converted from USD ${priceUsd} to GBP ${priceGbp}`);
+      priceEur = priceUsd * exchangeRate;
+      console.log(`Price for SKU ${item.sku} not found in DB, converted from USD ${priceUsd} to EUR ${priceEur}`);
     }
 
-console.log(`SKU: ${item.sku}, Price (GBP): ${priceGbp}, Qty: ${item.quantity}, productType: ${productType}`);
-    totalPriceGbp += priceGbp * item.quantity;
+console.log(`SKU: ${item.sku}, Price (EUR): ${priceEur}, Qty: ${item.quantity}, productType: ${productType}`);
+    totalPriceEur += priceEur * item.quantity;
   }
 
-  console.log("Total price (GBP) calculated:", totalPriceGbp);
+  console.log("Total price (EUR) calculated:", totalPriceEur);
 
   if (!hasItems) {
     return {
       rates: [{
-        service_name: "UK Standard Shipping",
-        service_code: "UK_STD",
+        service_name: "Belgium Standard Shipping",
+        service_code: "BE_STD",
         total_price: "0",
-        currency: "GBP",
+        currency: "EUR",
         description: "No shipping required for this order",
       }],
     };
@@ -207,19 +225,19 @@ console.log(`SKU: ${item.sku}, Price (GBP): ${priceGbp}, Qty: ${item.quantity}, 
 
   // Calculate only shipping costs: tax on items + carrier charge
   // Note: basePrice is not included - Shopify adds that separately
-  const taxAmount = totalPriceGbp * (settings.taxPercentage / 100);
+  const taxAmount = totalPriceEur * (settings.taxPercentage / 100);
   const carrierCharge = allItemsTaxOnly ? 0 : settings.carrierCharge;
   const shippingCost = taxAmount + carrierCharge;
 
-  console.log("Final calculation:", { totalPriceGbp, taxAmount, carrierCharge, shippingCost, allItemsTaxOnly });
+  console.log("Final calculation:", { totalPriceEur, taxAmount, carrierCharge, shippingCost, allItemsTaxOnly });
 
   const response = {
     rates: [{
-      service_name: "UK Standard Shipping",
-      service_code: "UK_STD",
+      service_name: "Belgium Standard Shipping",
+      service_code: "BE_STD",
       total_price: Math.round(shippingCost * 100).toString(),
-      currency: "GBP",
-      description: "Standard delivery within the UK",
+      currency: "EUR",
+      description: "Standard delivery within Belgium",
     }],
   };
 
@@ -229,6 +247,7 @@ console.log(`SKU: ${item.sku}, Price (GBP): ${priceGbp}, Qty: ${item.quantity}, 
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  console.log("========== CALLBACK HIT ==========");
   const startTime = Date.now();
   const requestBodyStr = await request.text();
   
@@ -258,10 +277,10 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!requestBody?.rate) {
     const response = { 
       rates: [{
-        service_name: "UK Standard Shipping",
-        service_code: "UK_STD",
+        service_name: "Belgium Standard Shipping",
+        service_code: "BE_STD",
         total_price: "0",
-        currency: "GBP",
+        currency: "EUR",
         description: "Invalid request",
       }] 
     };
@@ -301,10 +320,10 @@ export async function action({ request }: ActionFunctionArgs) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const response = { 
       rates: [{
-        service_name: "UK Standard Shipping",
-        service_code: "UK_STD",
+        service_name: "Belgium Standard Shipping",
+        service_code: "BE_STD",
         total_price: "0",
-        currency: "GBP",
+        currency: "EUR",
         description: "Error: " + errorMessage,
       }] 
     };
@@ -332,10 +351,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const response = { 
     rates: [{
-      service_name: "UK Standard Shipping",
-      service_code: "UK_STD",
+      service_name: "Belgium Standard Shipping",
+      service_code: "BE_STD",
       total_price: "0",
-      currency: "GBP",
+      currency: "EUR",
       description: "Use POST method for shipping rates",
     }] 
   };

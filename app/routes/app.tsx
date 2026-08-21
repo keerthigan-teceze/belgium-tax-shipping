@@ -34,6 +34,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     const formData = await request.formData();
 
+
+    console.log("========== SAVE ==========");
+console.log(Object.fromEntries(formData.entries()));
+console.log("Shop:", session.shop);
+
     const taxRateInput = formData.get("taxRate");
     const carrierChargeInput = formData.get("carrierCharge");
     const usdToEuroRateInput = formData.get("usdToEuroRate");
@@ -57,6 +62,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     ) {
       return redirect("/app?error=invalid-values");
     }
+console.log("Saving settings...");
 
     await prisma.settings_be.upsert({
       where: {
@@ -77,7 +83,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         updatedAt: new Date(),
       },
     });
-
+console.log("Settings saved");
     return redirect("/app?updated=true");
   } catch (error) {
     console.error("App action error:", error);

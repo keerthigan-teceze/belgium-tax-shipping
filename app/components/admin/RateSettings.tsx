@@ -68,6 +68,13 @@ export default function RateSettingsPanel({ settings }: Props) {
       </p>
 
       <form method="post" onSubmit={handleSubmit}>
+
+        <input
+  type="hidden"
+  name="action"
+  value="save-settings"
+/>
+        
         <div style={fieldGroupStylesFull}>
           <label style={fieldStyles}>
             Tax rate (%)

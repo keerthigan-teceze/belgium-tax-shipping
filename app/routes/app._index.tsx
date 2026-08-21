@@ -316,7 +316,7 @@ export default function Index() {
         <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#2563eb" }}>
           Admin dashboard
         </p>
-        <h1 style={{ margin: "8px 0 0", fontSize: 32 }}>Shipping Calculator Control Center</h1>
+        <h1 style={{ margin: "8px 0 0", fontSize: 32 }}>Belgium Shipping Calculator Control Center</h1>
         <p style={{ margin: "14px 0 0", maxWidth: 760, color: "#475569", lineHeight: 1.7 }}>
           Manage Shopify callback connectivity, SKU mapping synchronization, rate defaults, and delivery logs from one central admin screen.
         </p>

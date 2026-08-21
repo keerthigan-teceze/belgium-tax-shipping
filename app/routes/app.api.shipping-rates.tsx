@@ -164,7 +164,7 @@ async function processRequest(shop: string, requestBody: ShopifyRateRequest): Pr
     await logRequest(shop, "incoming", "/app/api/shipping-rates", "POST", "", JSON.stringify({ error: "No settings" }), 500, "No settings for shop", 0);
     return {
       rates: [{
-        service_name: "Belgium Standard Shipping",
+        service_name: "Belgium Standard Tax & Shipping",
         service_code: "BE_STD",
         total_price: "0",
         currency: "EUR",
@@ -214,7 +214,7 @@ console.log(`SKU: ${item.sku}, Price (EUR): ${priceEur}, Qty: ${item.quantity}, 
   if (!hasItems) {
     return {
       rates: [{
-        service_name: "Belgium Standard Shipping",
+        service_name: "Belgium Standard Tax & Shipping",
         service_code: "BE_STD",
         total_price: "0",
         currency: "EUR",
@@ -233,7 +233,7 @@ console.log(`SKU: ${item.sku}, Price (EUR): ${priceEur}, Qty: ${item.quantity}, 
 
   const response = {
     rates: [{
-      service_name: "Belgium Standard Shipping",
+      service_name: "Belgium Standard Tax & Shipping",
       service_code: "BE_STD",
       total_price: Math.round(shippingCost * 100).toString(),
       currency: "EUR",
@@ -247,6 +247,7 @@ console.log(`SKU: ${item.sku}, Price (EUR): ${priceEur}, Qty: ${item.quantity}, 
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  
   console.log("========== CALLBACK HIT ==========");
   const startTime = Date.now();
   const requestBodyStr = await request.text();
@@ -277,7 +278,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!requestBody?.rate) {
     const response = { 
       rates: [{
-        service_name: "Belgium Standard Shipping",
+        service_name: "Belgium Standard Tax & Shipping",
         service_code: "BE_STD",
         total_price: "0",
         currency: "EUR",
@@ -320,7 +321,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const response = { 
       rates: [{
-        service_name: "Belgium Standard Shipping",
+        service_name: "Belgium Standard Tax & Shipping",
         service_code: "BE_STD",
         total_price: "0",
         currency: "EUR",
@@ -351,7 +352,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const response = { 
     rates: [{
-      service_name: "Belgium Standard Shipping",
+      service_name: "Belgium Standard Tax & Shipping",
       service_code: "BE_STD",
       total_price: "0",
       currency: "EUR",

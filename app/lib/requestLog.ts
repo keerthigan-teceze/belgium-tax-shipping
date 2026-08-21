@@ -27,6 +27,7 @@ export async function logRequest(
 ) {
   return prisma.requestLog_be.create({
     data: {
+      id: crypto.randomUUID(),
       shop,
       type,
       endpoint,
